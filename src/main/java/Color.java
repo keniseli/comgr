@@ -5,6 +5,9 @@ public class Color {
     public static final Color YELLOW = new Color(255, 255, 0);
     public static final Color WHITE = new Color(255, 255, 255);
     public static final Color CYAN = new Color(0, 255, 255);
+    public static final Color GRAY = new Color(50, 50, 50);
+    public static final Color LIGHT_GRAY = new Color(200, 200, 200);
+
 
     private int red;
     private int green;
@@ -38,5 +41,14 @@ public class Color {
 
     public void setBlue(int blue) {
         this.blue = blue;
+    }
+
+    @Override
+    public String toString() {
+        return "Color{" +
+                "red=" + red +
+                ", green=" + green +
+                ", blue=" + blue +
+                '}';
     }
 }
