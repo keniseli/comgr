@@ -84,7 +84,7 @@ public class Frame extends JFrame {
     Vec2 getUnitLessCoordinateFittingVector(int x, int y) {
         int heightOffset = HEIGHT / 2;
         int widthOffset = WIDTH / 2;
-        Vec2 unitlessVector = new Vec2((float) (x - widthOffset) / widthOffset, (float) (heightOffset - y) / heightOffset);
+        Vec2 unitlessVector = new Vec2((float) (x - widthOffset) / widthOffset, (float) -(heightOffset - y) / heightOffset);
         return unitlessVector;
     }
 
