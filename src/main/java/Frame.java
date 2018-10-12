@@ -89,13 +89,14 @@ public class Frame extends JFrame {
     }
 
     Ray createEyeRay(Vec3 eye, Vec3 lookAt, double fieldOfView, Vec2 vec2) {
-        Vec3 f = lookAt.subtract(eye);
+        Vec3 n = lookAt.subtract(eye).normalize();
         Vec3 up = new Vec3(0, 1, 0);
-        Vec3 r = f.cross(up);
-        Vec3 u = r.cross(f);
-        Vec3 xrtan = r.scale((float) (vec2.x * Math.tan(fieldOfView / 2)));
-        Vec3 yutan = u.scale((float) (vec2.y * Math.tan(fieldOfView / 2)));
-        Vec3 direction = f.add(xrtan).add(yutan).normalize();
+        Vec3 u = n.cross(up).normalize();
+        Vec3 v = n.cross(u).normalize();
+
+        Vec3 xrtan = u.scale((float) (vec2.x * Math.tan(fieldOfView / 2)));
+        Vec3 yutan = v.scale((float) (vec2.y * Math.tan(fieldOfView / 2)));
+        Vec3 direction = n.add(xrtan).add(yutan).normalize();
         return new Ray(eye, direction);
     }
 

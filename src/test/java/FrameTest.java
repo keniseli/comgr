@@ -20,6 +20,11 @@ public class FrameTest {
     }
 
     @Test
+    public void test() {
+        System.out.println(new Vec3(1, 1, 10).normalize());
+    }
+
+    @Test
     public void testCreateEyeRayForMiddleOfImage() {
         Ray eyeRay = frame.createEyeRay(eye, lookAt, fieldOfView, frame.getUnitLessCoordinateFittingVector(300, 300));
         Assert.assertEquals(new Vec3(0, 0, 1), eyeRay.getDirection());
@@ -29,7 +34,9 @@ public class FrameTest {
     public void testCreateEyeRayForTopLeft() {
         Vec2 unitLessVector = frame.getUnitLessCoordinateFittingVector(0, 0);
         Ray eyeRay = frame.createEyeRay(eye, lookAt, fieldOfView, unitLessVector);
-        Assert.assertEquals(new Vec3(-0.10, 0.95, 0.29).toString(), eyeRay.getDirection().toString());
+        Vec3 eyeToLookAt = lookAt.subtract(eye);
+        Vec3 eyeToTopLeft = eyeToLookAt.add(new Vec3(-1, 1, 0));
+        Assert.assertEquals(eyeToTopLeft.normalize().toString(), eyeRay.getDirection().toString());
     }
 
     @Test
