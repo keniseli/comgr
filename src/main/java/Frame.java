@@ -33,7 +33,7 @@ public class Frame extends JFrame {
         spheres.add(new Sphere(new Vec3(-1001, 0, 0), 1000, Color.RED));
         spheres.add(new Sphere(new Vec3(1001, 0, 0), 1000, Color.BLUE));
         spheres.add(new Sphere(new Vec3(0, 0, 1001), 1000, Color.WHITE));
-        spheres.add(new Sphere(new Vec3(0, -1001, 0), 1000, Color.GRAY));
+        spheres.add(new Sphere(new Vec3(0, -1001, 0), 1000, Color.LIGHT_GRAY));
         spheres.add(new Sphere(new Vec3(0, 1001, 0), 1000, Color.LIGHT_GRAY));
         spheres.add(new Sphere(new Vec3(-0.6, 0.7, -0.6), 0.3, Color.YELLOW));
         spheres.add(new Sphere(new Vec3(0.3, 0.4, 0.3), 0.6, Color.CYAN));
@@ -94,8 +94,8 @@ public class Frame extends JFrame {
         Vec3 u = n.cross(up).normalize();
         Vec3 v = n.cross(u).normalize();
 
-        Vec3 xrtan = u.scale((float) (vec2.x * Math.tan(fieldOfView / 2)));
-        Vec3 yutan = v.scale((float) (vec2.y * Math.tan(fieldOfView / 2)));
+        Vec3 xrtan = u.scale((float) -(vec2.x * Math.tan(fieldOfView / 2)));
+        Vec3 yutan = v.scale((float) -(vec2.y * Math.tan(fieldOfView / 2)));
         Vec3 direction = n.add(xrtan).add(yutan).normalize();
         return new Ray(eye, direction);
     }

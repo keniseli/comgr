@@ -35,29 +35,28 @@ public class FrameTest {
         Vec2 unitLessVector = frame.getUnitLessCoordinateFittingVector(0, 0);
         Ray eyeRay = frame.createEyeRay(eye, lookAt, fieldOfView, unitLessVector);
         Vec3 eyeToLookAt = lookAt.subtract(eye);
-        Vec3 eyeToTopLeft = eyeToLookAt.add(new Vec3(-1, 1, 0));
-        Assert.assertEquals(eyeToTopLeft.normalize().toString(), eyeRay.getDirection().toString());
+        Assert.assertEquals(new Vec3(-0.30, -0.30, 0.91).toString(), eyeRay.getDirection().toString());
     }
 
     @Test
     public void testCreateEyeRayForBottomLeft() {
         Vec2 unitLessVector = frame.getUnitLessCoordinateFittingVector(0, 600);
         Ray eyeRay = frame.createEyeRay(eye, lookAt, fieldOfView, unitLessVector);
-        Assert.assertEquals(new Vec3(-0.10, -0.95, 0.29).toString(), eyeRay.getDirection().toString());
+        Assert.assertEquals(new Vec3(-0.30, 0.30, 0.91).toString(), eyeRay.getDirection().toString());
     }
 
     @Test
     public void testCreateEyeRayForBottomRight() {
         Vec2 unitLessVector = frame.getUnitLessCoordinateFittingVector(600, 600);
         Ray eyeRay = frame.createEyeRay(eye, lookAt, fieldOfView, unitLessVector);
-        Assert.assertEquals(new Vec3(0.10, -0.95, 0.29).toString(), eyeRay.getDirection().toString());
+        Assert.assertEquals(new Vec3(0.30, 0.30, 0.91).toString(), eyeRay.getDirection().toString());
     }
 
     @Test
     public void testCreateEyeRayForMiddleLeft() {
         Vec2 unitLessVector = frame.getUnitLessCoordinateFittingVector(-300, 0);
         Ray eyeRay = frame.createEyeRay(eye, lookAt, fieldOfView, unitLessVector);
-        Assert.assertEquals(new Vec3(0.10, 0, 0.29).toString(), eyeRay.getDirection().toString());
+        Assert.assertEquals(new Vec3(-0.53, -0.26, 0.81).toString(), eyeRay.getDirection().toString());
     }
 
     @Test
