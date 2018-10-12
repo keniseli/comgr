@@ -25,4 +25,12 @@ public class Ray {
     public void setDirection(Vec3 direction) {
         this.direction = direction;
     }
+
+    @Override
+    public String toString() {
+        return "Ray{" +
+                "origin=" + origin +
+                ", direction=" + direction +
+                '}';
+    }
 }
