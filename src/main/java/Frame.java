@@ -17,9 +17,10 @@ public class Frame extends JFrame {
     private static final Vec3 YELLOW = new Vec3(1, 1, 0);
     private static final Vec3 WHITE = new Vec3(1, 1, 1);
     private static final Vec3 CYAN = new Vec3(0, 1, 1);
-    private static final Vec3 GRAY = new Vec3((float)50 / 255, (float)50 / 255, (float)50 / 255);
-    private static final Vec3 LIGHT_GRAY = new Vec3((float)200 / 255, (float)200 / 255, (float)200 / 255);
+    private static final Vec3 GRAY = new Vec3((float) 50 / 255, (float) 50 / 255, (float) 50 / 255);
+    private static final Vec3 LIGHT_GRAY = new Vec3((float) 200 / 255, (float) 200 / 255, (float) 200 / 255);
     private static final Vec3 BLACK = new Vec3(0, 0, 0);
+    private static final Vec3 PURPLE = new Vec3((float) 1, 0, (float) 1);
 
     public static final Vec3 MATERIAL = new Vec3(0.8, 0.9, 0.8);
     private static final Sphere LEFT_WALL = new Sphere(new Vec3(-1001, 0, 0), 1000, RED);
@@ -30,9 +31,10 @@ public class Frame extends JFrame {
     private static final Sphere YELLOW_SPHERE = new Sphere(new Vec3(-0.6, -0.7, -0.6), 0.3, YELLOW);
     private static final Sphere CYAN_SPHERE = new Sphere(new Vec3(0.3, -0.4, 0.3), 0.6, CYAN);
 
-    private static final LightSource FIRST_LIGHT = new LightSource(WHITE, new Vec3(0, 0.9, 0));
-    private static final LightSource SECOND_LIGHT = new LightSource(YELLOW, new Vec3(-0.5, 0.9, 0));
-    private static final LightSource THIRD_LIGHT = new LightSource(BLUE, new Vec3(0.5, 0.9, 0));
+    private static final LightSource FIRST_LIGHT = new LightSource(WHITE, new Vec3(0, 0.9, 0.5));
+    private static final LightSource SECOND_LIGHT = new LightSource(YELLOW, new Vec3(-0.6, 0.9, 0));
+    private static final LightSource THIRD_LIGHT = new LightSource(PURPLE, new Vec3(0.6, 0.9, 0));
+    private static final double K = 50;
 
     private List<Sphere> spheres;
     private List<LightSource> lightSources;
@@ -148,7 +150,8 @@ public class Frame extends JFrame {
         Vec3 iSh = BLACK;
         for (LightSource lightSource : lightSources) {
             iD = diffuse(sphereHitpoint, sphere, lightSource);
-            color = color.add(iD);
+            iS = specular(sphereHitpoint, sphere, lightSource);
+            color = color.add(iD).add(iS);
         }
         return color;
     }
@@ -157,8 +160,8 @@ public class Frame extends JFrame {
         Vec3 h = sphereHitpoint.getH();
         Vec3 sphereCenter = sphere.getCenter();
         Vec3 up = h.subtract(sphereCenter).normalize();
-        Vec3 i = lightSource.getLocation().subtract(h).normalize();
-        float cosTheta = up.dot(i);
+        Vec3 l = lightSource.getLocation().subtract(h).normalize();
+        float cosTheta = up.dot(l);
 
         if (cosTheta >= 0) {
             Vec3 surfaceColor = sphere.getColor();
@@ -166,6 +169,22 @@ public class Frame extends JFrame {
             Vec3 diffuse = surfaceLight.scale(cosTheta);
 //            System.out.println("light " + lightSource.getColor() + " - surface " + sphere.getColor() + " = " + diffuse);
             return BLACK.add(diffuse);
+        }
+        return BLACK;
+    }
+
+    private Vec3 specular(SphereHitpoint sphereHitpoint, Sphere sphere, LightSource lightSource) {
+        Vec3 h = sphereHitpoint.getH();
+        Vec3 l = lightSource.getLocation().subtract(h).normalize();
+        Vec3 sphereCenter = sphere.getCenter();
+        Vec3 up = h.subtract(sphereCenter).normalize();
+        float lDotUp = l.dot(up);
+        if (lDotUp >= 0) {
+            Vec3 s = l.subtract(up.scale(lDotUp));
+            Vec3 r = l.subtract(s.scale(2)).normalize();
+            float cosTheta = r.dot(sphereHitpoint.getRay().getDirection().normalize());
+            Vec3 iS = lightSource.getColor().scale((float) Math.pow(cosTheta, K));
+            return iS;
         }
         return BLACK;
     }
