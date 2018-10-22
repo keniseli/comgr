@@ -5,9 +5,9 @@ public class Sphere {
 
     private Vec3 center;
     private double radius;
-    private Color color;
+    private Vec3 color;
 
-    public Sphere(Vec3 center, double radius, Color color) {
+    public Sphere(Vec3 center, double radius, Vec3 color) {
         this.center = center;
         this.radius = radius;
         this.color = color;
@@ -88,11 +88,11 @@ public class Sphere {
         this.radius = radius;
     }
 
-    public Color getColor() {
+    public Vec3 getColor() {
         return color;
     }
 
-    public void setColor(Color color) {
+    public void setColor(Vec3 color) {
         this.color = color;
     }
 

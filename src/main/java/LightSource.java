@@ -2,19 +2,19 @@ import vectors.Vec3;
 
 public class LightSource {
 
-    private Color color;
+    private Vec3 color;
     private Vec3 location;
 
-    public LightSource(Color color, Vec3 location) {
+    public LightSource(Vec3 color, Vec3 location) {
         this.color = color;
         this.location = location;
     }
 
-    public Color getColor() {
+    public Vec3 getColor() {
         return color;
     }
 
-    public void setColor(Color color) {
+    public void setColor(Vec3 color) {
         this.color = color;
     }
 

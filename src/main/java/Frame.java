@@ -1,4 +1,3 @@
-import vectors.MathUtilities;
 import vectors.Vec2;
 import vectors.Vec3;
 
@@ -10,21 +9,29 @@ import java.util.List;
 
 public class Frame extends JFrame {
 
-    public static final int WIDTH = 600;
-    public static final int HEIGHT = 600;
+    static final int WIDTH = 600;
+    static final int HEIGHT = 600;
+
+    private static final Vec3 RED = new Vec3(255, 0, 0);
+    private static final Vec3 BLUE = new Vec3(0, 0, 255);
+    private static final Vec3 YELLOW = new Vec3(255, 255, 0);
+    private static final Vec3 WHITE = new Vec3(255, 255, 255);
+    private static final Vec3 CYAN = new Vec3(0, 255, 255);
+    private static final Vec3 GRAY = new Vec3(50, 50, 50);
+    private static final Vec3 LIGHT_GRAY = new Vec3(200, 200, 200);
+    private static final Vec3 BLACK = new Vec3(0, 0, 0);
+
     public static final Vec3 MATERIAL = new Vec3(0.8, 0.9, 0.8);
-    public static final Sphere LEFT_WALL = new Sphere(new Vec3(-1001, 0, 0), 1000, Color.RED);
-    public static final Sphere RIGHT_WALL = new Sphere(new Vec3(1001, 0, 0), 1000, Color.BLUE);
-    public static final Sphere BACK_WALL = new Sphere(new Vec3(0, 0, 1001), 1000, Color.WHITE);
-    public static final Sphere FLOOR = new Sphere(new Vec3(0, -1001, 0), 1000, Color.LIGHT_GRAY);
-    public static final Sphere CEILING = new Sphere(new Vec3(0, 1001, 0), 1000, Color.GRAY);
-    public static final Sphere YELLOW_SPHERE = new Sphere(new Vec3(-0.6, -0.7, -0.6), 0.3, Color.YELLOW);
-    public static final Sphere CYAN_SPHERE = new Sphere(new Vec3(0.3, -0.4, 0.3), 0.6, Color.CYAN);
+    private static final Sphere LEFT_WALL = new Sphere(new Vec3(-1001, 0, 0), 1000, RED);
+    private static final Sphere RIGHT_WALL = new Sphere(new Vec3(1001, 0, 0), 1000, BLUE);
+    private static final Sphere BACK_WALL = new Sphere(new Vec3(0, 0, 1001), 1000, WHITE);
+    private static final Sphere FLOOR = new Sphere(new Vec3(0, -1001, 0), 1000, LIGHT_GRAY);
+    private static final Sphere CEILING = new Sphere(new Vec3(0, 1001, 0), 1000, GRAY);
+    private static final Sphere YELLOW_SPHERE = new Sphere(new Vec3(-0.6, -0.7, -0.6), 0.3, YELLOW);
+    private static final Sphere CYAN_SPHERE = new Sphere(new Vec3(0.3, -0.4, 0.3), 0.6, CYAN);
 
+    private static final LightSource FIRST_LIGHT = new LightSource(WHITE, new Vec3(0, 0.9, 0));
 
-    public static final LightSource FIRST_LIGHT = new LightSource(Color.WHITE, new Vec3(0, 0.9, 0));
-
-    private final MemoryImageSource producer;
     private List<Sphere> spheres;
     private List<LightSource> lightSources;
     private Image image;
@@ -32,7 +39,7 @@ public class Frame extends JFrame {
     private double fieldOfView;
     private Vec3 lookAt;
 
-    public Frame() {
+    Frame() {
         eye = new Vec3(0, 0, -4);
         fieldOfView = 36.0 * Math.PI / 180.0;
         lookAt = new Vec3(0, 0, 6);
@@ -59,7 +66,7 @@ public class Frame extends JFrame {
                 Vec2 unitLessVector = getUnitLessCoordinateFittingVector(x, y);
                 Ray ray = createEyeRay(eye, lookAt, fieldOfView, unitLessVector);
                 SphereHitpoint closestHitpoint = findClosestHitpoint(ray);
-                Color color = Color.WHITE;
+                Vec3 color = BLACK;
                 if (closestHitpoint != null) {
                     color = determineColor(spheres, closestHitpoint);
 
@@ -72,7 +79,7 @@ public class Frame extends JFrame {
                     }
                     // ---
                 }
-                data[(y * WIDTH) + x] = (255 << 24) | (color.getRed() << 16) | color.getGreen() << 8 | color.getBlue();
+                data[(y * WIDTH) + x] = (255 << 24) | (((int) color.x) << 16) | ((int) color.y) << 8 | ((int) color.z);
             }
         }
 
@@ -82,7 +89,7 @@ public class Frame extends JFrame {
         });
         // ---
 
-        producer = new MemoryImageSource(WIDTH, HEIGHT, data, 0, WIDTH);
+        MemoryImageSource producer = new MemoryImageSource(WIDTH, HEIGHT, data, 0, WIDTH);
         image = createImage(producer);
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -115,9 +122,9 @@ public class Frame extends JFrame {
         g.drawImage(image, 0, 0, this);
     }
 
-    private Color determineColor(List<Sphere> spheres, SphereHitpoint sphereHitpoint) {
+    private Vec3 determineColor(List<Sphere> spheres, SphereHitpoint sphereHitpoint) {
         Sphere sphere = sphereHitpoint.getSphere();
-        Color color = Color.BLACK;
+        Vec3 color = BLACK;
         for (LightSource lightSource : lightSources) {
             Vec3 h = sphereHitpoint.getH();
             Vec3 sphereCenter = sphere.getCenter();
@@ -126,9 +133,9 @@ public class Frame extends JFrame {
             float cosTheta = up.dot(i);
 //            float cos = lightSource.getColor().toVector().dot(MATERIAL) * cosTheta;
 
-            Color surfaceColor = sphere.getColor();
+            Vec3 surfaceColor = sphere.getColor();
 //            Color diffuse = lightSource.getColor().scale(cosTheta).multiply(surfaceColor);
-            Color diffuse = surfaceColor.scale(cosTheta);
+            Vec3 diffuse = surfaceColor.scale(cosTheta);
             if (cosTheta >= 0) {
                 color = diffuse;
             }
