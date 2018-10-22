@@ -1,3 +1,4 @@
+import vectors.MathUtilities;
 import vectors.Vec2;
 import vectors.Vec3;
 
@@ -11,17 +12,24 @@ public class Frame extends JFrame {
 
     public static final int WIDTH = 600;
     public static final int HEIGHT = 600;
+    public static final Vec3 MATERIAL = new Vec3(0.8, 0.9, 0.8);
+    public static final Sphere LEFT_WALL = new Sphere(new Vec3(-1001, 0, 0), 1000, Color.RED);
+    public static final Sphere RIGHT_WALL = new Sphere(new Vec3(1001, 0, 0), 1000, Color.BLUE);
+    public static final Sphere BACK_WALL = new Sphere(new Vec3(0, 0, 1001), 1000, Color.WHITE);
+    public static final Sphere FLOOR = new Sphere(new Vec3(0, -1001, 0), 1000, Color.LIGHT_GRAY);
+    public static final Sphere CEILING = new Sphere(new Vec3(0, 1001, 0), 1000, Color.GRAY);
+    public static final Sphere YELLOW_SPHERE = new Sphere(new Vec3(-0.6, -0.7, -0.6), 0.3, Color.YELLOW);
+    public static final Sphere CYAN_SPHERE = new Sphere(new Vec3(0.3, -0.4, 0.3), 0.6, Color.CYAN);
+
+
+    public static final LightSource FIRST_LIGHT = new LightSource(Color.WHITE, new Vec3(0, 0.9, 0));
+
     private final MemoryImageSource producer;
     private List<Sphere> spheres;
+    private List<LightSource> lightSources;
     private Image image;
-
-    // E
     private Vec3 eye;
-
-    // alpha
     private double fieldOfView;
-
-    // look at vector
     private Vec3 lookAt;
 
     public Frame() {
@@ -30,13 +38,16 @@ public class Frame extends JFrame {
         lookAt = new Vec3(0, 0, 6);
 
         spheres = new ArrayList<>();
-        spheres.add(new Sphere(new Vec3(-1001, 0, 0), 1000, Color.RED));
-        spheres.add(new Sphere(new Vec3(1001, 0, 0), 1000, Color.BLUE));
-        spheres.add(new Sphere(new Vec3(0, 0, 1001), 1000, Color.WHITE));
-        spheres.add(new Sphere(new Vec3(0, -1001, 0), 1000, Color.LIGHT_GRAY));
-        spheres.add(new Sphere(new Vec3(0, 1001, 0), 1000, Color.LIGHT_GRAY));
-        spheres.add(new Sphere(new Vec3(-0.6, 0.7, -0.6), 0.3, Color.YELLOW));
-        spheres.add(new Sphere(new Vec3(0.3, 0.4, 0.3), 0.6, Color.CYAN));
+        spheres.add(LEFT_WALL);
+        spheres.add(RIGHT_WALL);
+        spheres.add(BACK_WALL);
+        spheres.add(FLOOR);
+        spheres.add(CEILING);
+        spheres.add(YELLOW_SPHERE);
+        spheres.add(CYAN_SPHERE);
+
+        lightSources = new ArrayList<>();
+        lightSources.add(FIRST_LIGHT);
 
         // --- this is for debugging purposes only
         Map<Sphere, Integer> occurrences = new HashMap<>();
@@ -84,7 +95,7 @@ public class Frame extends JFrame {
     Vec2 getUnitLessCoordinateFittingVector(int x, int y) {
         int heightOffset = HEIGHT / 2;
         int widthOffset = WIDTH / 2;
-        Vec2 unitlessVector = new Vec2((float) (x - widthOffset) / widthOffset, (float) -(heightOffset - y) / heightOffset);
+        Vec2 unitlessVector = new Vec2((float) (x - widthOffset) / widthOffset, (float) (heightOffset - y) / heightOffset);
         return unitlessVector;
     }
 
@@ -105,7 +116,24 @@ public class Frame extends JFrame {
     }
 
     private Color determineColor(List<Sphere> spheres, SphereHitpoint sphereHitpoint) {
-        return sphereHitpoint.getSphere().getColor();
+        Sphere sphere = sphereHitpoint.getSphere();
+        Color color = Color.BLACK;
+        for (LightSource lightSource : lightSources) {
+            Vec3 h = sphereHitpoint.getH();
+            Vec3 sphereCenter = sphere.getCenter();
+            Vec3 up = h.subtract(sphereCenter).normalize();
+            Vec3 i = lightSource.getLocation().subtract(h).normalize();
+            float cosTheta = up.dot(i);
+//            float cos = lightSource.getColor().toVector().dot(MATERIAL) * cosTheta;
+
+            Color surfaceColor = sphere.getColor();
+//            Color diffuse = lightSource.getColor().scale(cosTheta).multiply(surfaceColor);
+            Color diffuse = surfaceColor.scale(cosTheta);
+            if (cosTheta >= 0) {
+                color = diffuse;
+            }
+        }
+        return color;
     }
 
     private SphereHitpoint findClosestHitpoint(Ray ray) {
@@ -117,11 +145,8 @@ public class Frame extends JFrame {
                 .findFirst();
         if (firstSphere.isPresent()) {
             Sphere sphere = firstSphere.get();
-            Color color = sphere.getColor();
-//            System.out.println("Found sphere with lambda " + sphere.getSmallerPositiveLambda(ray) + " and color " + color.getRed() + ", " + color.getGreen() + ", " + color.getBlue() + " and ray direction " + ray.getDirection());
-            // TODO: check whether h is necesseary somewere
             Vec3 h = ray.getOrigin().add(ray.getDirection().scale((float) sphere.getSmallerPositiveLambda(ray)));
-            return new SphereHitpoint(sphere, ray);
+            return new SphereHitpoint(sphere, ray, h);
         }
         return null;
     }

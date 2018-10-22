@@ -21,7 +21,7 @@ public class FrameTest {
 
     @Test
     public void test() {
-        System.out.println(new Vec3(1, 1, 10).normalize());
+        System.out.println(new Vec3(4.01, -0.59, -.079).normalize());
     }
 
     @Test

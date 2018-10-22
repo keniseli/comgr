@@ -1,3 +1,5 @@
+import vectors.Vec3;
+
 public class Color {
 
     public static final Color RED = new Color(255, 0, 0);
@@ -7,7 +9,7 @@ public class Color {
     public static final Color CYAN = new Color(0, 255, 255);
     public static final Color GRAY = new Color(50, 50, 50);
     public static final Color LIGHT_GRAY = new Color(200, 200, 200);
-
+    public static final Color BLACK = new Color(0, 0, 0);
 
     private int red;
     private int green;
@@ -50,5 +52,40 @@ public class Color {
                 ", green=" + green +
                 ", blue=" + blue +
                 '}';
+    }
+
+    public Color multiply(Color color) {
+//        return this;
+        int red = Math.min(this.red * color.red, 255);
+        int green = Math.min(this.green * color.green, 255);
+        int blue = Math.min(this.blue * color.blue, 255);
+        return new Color(red, green, blue);
+    }
+
+    public Color multiply(float cos) {
+        if (cos >= 0) {
+            Vec3 scale = toVector().scale(cos);
+            red = (int) scale.x;
+            green = (int) scale.y;
+            blue = (int) scale.z;
+            return this;
+        } else {
+            return new Color(0, 0, 0);
+        }
+    }
+
+    public Vec3 toVector() {
+        return new Vec3(red, green, blue);
+    }
+
+    public Color scale(float cosTheta) {
+        float red = Math.min(this.red * cosTheta, 255);
+        float green = Math.min(this.green * cosTheta, 255);
+        float blue = Math.min(this.blue * cosTheta, 255);
+        return new Color((int) red, (int) green, (int) blue);
+    }
+
+    public Color add(Color surfaceColor) {
+        return new Color(red + surfaceColor.red, green + surfaceColor.green, blue + surfaceColor.blue);
     }
 }

@@ -5,9 +5,12 @@ public class SphereHitpoint {
     private Sphere sphere;
     private Ray ray;
 
-    public SphereHitpoint(Sphere sphere, Ray ray) {
+    private final Vec3 h;
+
+    public SphereHitpoint(Sphere sphere, Ray ray, Vec3 h) {
         this.sphere = sphere;
         this.ray = ray;
+        this.h = h;
     }
 
     public Sphere getSphere() {
@@ -24,5 +27,9 @@ public class SphereHitpoint {
 
     public void setRay(Ray ray) {
         this.ray = ray;
+    }
+
+    public Vec3 getH() {
+        return h;
     }
 }
