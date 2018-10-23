@@ -1,3 +1,4 @@
+import javafx.scene.effect.Light;
 import vectors.Vec2;
 import vectors.Vec3;
 
@@ -20,7 +21,8 @@ public class Frame extends JFrame {
     private static final Vec3 GRAY = new Vec3((float) 50 / 255, (float) 50 / 255, (float) 50 / 255);
     private static final Vec3 LIGHT_GRAY = new Vec3((float) 200 / 255, (float) 200 / 255, (float) 200 / 255);
     private static final Vec3 BLACK = new Vec3(0, 0, 0);
-    private static final Vec3 PURPLE = new Vec3((float) 1, 0, (float) 1);
+    private static final Vec3 GREEN = new Vec3(0, 1, 0);
+    private static final Vec3 PURPLE = new Vec3((float) 139 / 255, 0, (float) 139 / 255);
 
     public static final Vec3 MATERIAL = new Vec3(0.8, 0.9, 0.8);
     private static final Sphere LEFT_WALL = new Sphere(new Vec3(-1001, 0, 0), 1000, RED);
@@ -31,9 +33,9 @@ public class Frame extends JFrame {
     private static final Sphere YELLOW_SPHERE = new Sphere(new Vec3(-0.6, -0.7, -0.6), 0.3, YELLOW);
     private static final Sphere CYAN_SPHERE = new Sphere(new Vec3(0.3, -0.4, 0.3), 0.6, CYAN);
 
-    private static final LightSource FIRST_LIGHT = new LightSource(WHITE, new Vec3(0, 0.9, 0.5));
-    private static final LightSource SECOND_LIGHT = new LightSource(YELLOW, new Vec3(-0.6, 0.9, 0));
-    private static final LightSource THIRD_LIGHT = new LightSource(PURPLE, new Vec3(0.6, 0.9, 0));
+    private static final LightSource FIRST_LIGHT = new LightSource(RED, new Vec3(-0.6, 0.8, 0));
+    private static final LightSource SECOND_LIGHT = new LightSource(GREEN, new Vec3(0, 0.9, -0.3));
+    private static final LightSource THIRD_LIGHT = new LightSource(BLUE, new Vec3(0.6, 0.8, 0));
     private static final double K = 50;
 
     private List<Sphere> spheres;
@@ -58,9 +60,9 @@ public class Frame extends JFrame {
         spheres.add(CYAN_SPHERE);
 
         lightSources = new ArrayList<>();
-        lightSources.add(FIRST_LIGHT);
-        lightSources.add(SECOND_LIGHT);
         lightSources.add(THIRD_LIGHT);
+        lightSources.add(SECOND_LIGHT);
+        lightSources.add(FIRST_LIGHT);
 
 
         // --- this is for debugging purposes only
@@ -145,13 +147,18 @@ public class Frame extends JFrame {
     private Vec3 determineColor(List<Sphere> spheres, SphereHitpoint sphereHitpoint) {
         Sphere sphere = sphereHitpoint.getSphere();
         Vec3 color = BLACK;
-        Vec3 iD = BLACK;
-        Vec3 iS = BLACK;
-        Vec3 iSh = BLACK;
+        Vec3 lightDiffuse;
+        Vec3 lightSpecular;
+        Vec3 lightShadow;
         for (LightSource lightSource : lightSources) {
-            iD = diffuse(sphereHitpoint, sphere, lightSource);
-            iS = specular(sphereHitpoint, sphere, lightSource);
-            color = color.add(iD).add(iS);
+            lightDiffuse = diffuse(sphereHitpoint, sphere, lightSource);
+            lightSpecular = specular(sphereHitpoint, sphere, lightSource);
+            lightShadow = new Vec3(0, 0, 0);
+            for (LightSource shadowSource : lightSources) {
+                lightShadow = lightShadow.add(shadow(sphereHitpoint, sphere, shadowSource));
+            }
+            lightShadow = lightShadow.scale(0.66f);
+            color = multiplyPointwise(color.add(lightDiffuse).add(lightSpecular), lightShadow);
         }
         return color;
     }
@@ -167,7 +174,6 @@ public class Frame extends JFrame {
             Vec3 surfaceColor = sphere.getColor();
             Vec3 surfaceLight = multiplyPointwise(surfaceColor, lightSource.getColor());
             Vec3 diffuse = surfaceLight.scale(cosTheta);
-//            System.out.println("light " + lightSource.getColor() + " - surface " + sphere.getColor() + " = " + diffuse);
             return BLACK.add(diffuse);
         }
         return BLACK;
@@ -187,6 +193,26 @@ public class Frame extends JFrame {
             return iS;
         }
         return BLACK;
+    }
+
+    private Vec3 shadow(SphereHitpoint sphereHitpoint, Sphere sphere, LightSource lightSource) {
+        float shadow = 1f;
+        Vec3 h = sphereHitpoint.getH();
+        Vec3 l = lightSource.getLocation();
+        Vec3 sphereCenter = sphere.getCenter();
+        Vec3 up = h.subtract(sphereCenter).normalize();
+        Vec3 lightMoved = lightSource.getLocation().subtract(new Vec3(0, -1, 0).scale(0.001f));
+        Vec3 ensuredOutsideH = h.add(up.scale(0.001f));
+        Ray lightFeeler = new Ray(ensuredOutsideH, l.subtract(ensuredOutsideH).normalize());
+        SphereHitpoint hitpoint = findClosestHitpoint(lightFeeler);
+        if (hitpoint != null) {
+            if (hitpoint.getH().subtract(ensuredOutsideH).length() <= lightMoved.subtract(ensuredOutsideH).length() &&
+                    hitpoint.getSphere() != sphere) {
+                shadow = 0.1f;
+            }
+        }
+        Vec3 lightColor = lightSource.getColor();
+        return lightColor.scale(shadow);
     }
 
     private Vec3 multiplyPointwise(Vec3 vec1, Vec3 vec2) {
