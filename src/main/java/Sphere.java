@@ -88,9 +88,6 @@ public class Sphere {
         this.radius = radius;
     }
 
-    public Vec3 getColor() {
-        return color;
-    }
 
     public void setColor(Vec3 color) {
         this.color = color;
@@ -103,5 +100,9 @@ public class Sphere {
                 ", radius=" + radius +
                 ", color=" + color +
                 '}';
+    }
+
+    public Vec3 getColor(Vec3 location) {
+        return this.color;
     }
 }

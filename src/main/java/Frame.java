@@ -1,9 +1,13 @@
 import vectors.Vec2;
 import vectors.Vec3;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.awt.image.MemoryImageSource;
+import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 import java.util.List;
 
@@ -19,7 +23,7 @@ public class Frame extends JFrame {
     private static final Vec3 CYAN = new Vec3(0, 1, 1);
     private static final Vec3 GRAY = new Vec3((float) 50 / 255, (float) 50 / 255, (float) 50 / 255);
     private static final Vec3 LIGHT_GRAY = new Vec3((float) 200 / 255, (float) 200 / 255, (float) 200 / 255);
-    private static final Vec3 BLACK = new Vec3(0, 0, 0);
+    public static final Vec3 BLACK = new Vec3(0, 0, 0);
     private static final Vec3 GREEN = new Vec3(0, 1, 0);
     private static final Vec3 PURPLE = new Vec3((float) 139 / 255, 0, (float) 139 / 255);
 
@@ -29,13 +33,31 @@ public class Frame extends JFrame {
     private static final Sphere BACK_WALL = new Sphere(new Vec3(0, 0, 1001), 1000, WHITE);
     private static final Sphere FLOOR = new Sphere(new Vec3(0, -1001, 0), 1000, LIGHT_GRAY);
     private static final Sphere CEILING = new Sphere(new Vec3(0, 1001, 0), 1000, GRAY);
-    private static final Sphere YELLOW_SPHERE = new Sphere(new Vec3(-0.6, -0.7, -0.6), 0.3, YELLOW);
-    private static final Sphere CYAN_SPHERE = new Sphere(new Vec3(0.3, -0.4, 0.3), 0.6, CYAN);
+//    private static final Sphere SMALL_SPHERE = new Sphere(new Vec3(-0.6, -0.7, -0.6), 0.3, YELLOW);
+    //    private static final Sphere BIG_SPHERE = new Sphere(new Vec3(0.3, -0.4, 0.3), 0.6, CYAN);
+
+    private static Sphere SMALL_SPHERE;
+    private static Sphere BIG_SPHERE;
+
+    static {
+        try {
+            Vec3 location = new Vec3(0.3, -0.4, 0.3);
+            URL url = Frame.class.getResource("pavement.jpg");
+            BufferedImage image = ImageIO.read(url);
+            BIG_SPHERE = new BitmapSphere(location, 0.6, CYAN, image);
+            location = new Vec3(-0.6, -0.7, -0.6);
+            url = Frame.class.getResource("sun.png");
+            image = ImageIO.read(url);
+            SMALL_SPHERE = new BitmapSphere(location, 0.3, YELLOW, image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private static final LightSource FIRST_LIGHT = new LightSource(RED, new Vec3(-0.6, 0.8, 0));
     private static final LightSource SECOND_LIGHT = new LightSource(GREEN, new Vec3(0, 0.9, -0.3));
     private static final LightSource THIRD_LIGHT = new LightSource(BLUE, new Vec3(0.6, 0.8, 0));
-    private static final LightSource FOURTH_LIGHT = new LightSource(WHITE, new Vec3(0, 0.9, 0.5));
+    private static final LightSource FOURTH_LIGHT = new LightSource(WHITE, new Vec3(0, 0.9, -1.25));
     private static final double K = 50;
     private static final int REFLECTIONS = 1;
 
@@ -57,8 +79,8 @@ public class Frame extends JFrame {
         spheres.add(BACK_WALL);
         spheres.add(FLOOR);
         spheres.add(CEILING);
-        spheres.add(YELLOW_SPHERE);
-        spheres.add(CYAN_SPHERE);
+        spheres.add(SMALL_SPHERE);
+        spheres.add(BIG_SPHERE);
 
         lightSources = new ArrayList<>();
 //        lightSources.add(THIRD_LIGHT);
@@ -92,14 +114,13 @@ public class Frame extends JFrame {
         setVisible(true);
     }
 
-    private int getSRGB(float x) {
+    static int getSRGB(float x) {
         float correction = gammaCorrection(x);
         return (int) Math.min(correction * 255, 255);
     }
 
-    private float gammaCorrection(float x) {
-        if (x <= 0.0031308) return 12.92f * x;
-        return (1.055f * (float) Math.pow(x, 1 / 2.4)) - 0.055f;
+    private static float gammaCorrection(float x) {
+        return (float) Math.pow(x, 1f / 2.4f);
     }
 
     Vec2 getUnitLessCoordinateFittingVector(int x, int y) {
@@ -138,14 +159,15 @@ public class Frame extends JFrame {
             color = color.add(lightDiffuse).add(lightSpecular);
             color = multiplyPointwise(color, lightShadow);
         }
-        color = reflect(spheres, sphereHitpoint, depth, sphere, color);
+//        color = reflect(spheres, sphereHitpoint, depth, sphere, color);
 
         return color;
     }
 
     private Vec3 reflect(List<Sphere> spheres, SphereHitpoint sphereHitpoint, int depth, Sphere sphere, Vec3 color) {
-        if (depth > 0 && sphere.getColor().equals(CYAN) || sphere.getColor().equals(YELLOW)) {
-            Vec3 h = sphereHitpoint.getH();
+        Vec3 h = sphereHitpoint.getH();
+        Vec3 sphereColor = sphere.getColor(h);
+        if (depth > 0 && sphereColor.equals(CYAN) || sphereColor.equals(YELLOW)) {
             Vec3 sphereCenter = sphere.getCenter();
             Vec3 up = h.subtract(sphereCenter).normalize();
             h = h.add(up.scale(0.001f));
@@ -172,7 +194,7 @@ public class Frame extends JFrame {
         float cosTheta = up.dot(l);
 
         if (cosTheta >= 0) {
-            Vec3 surfaceColor = sphere.getColor();
+            Vec3 surfaceColor = sphere.getColor(sphereHitpoint.getH());
             Vec3 surfaceLight = multiplyPointwise(surfaceColor, lightSource.getColor());
             Vec3 diffuse = surfaceLight.scale(cosTheta);
             return BLACK.add(diffuse);
