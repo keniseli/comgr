@@ -1,4 +1,3 @@
-import javafx.scene.effect.Light;
 import vectors.Vec2;
 import vectors.Vec3;
 
@@ -36,7 +35,9 @@ public class Frame extends JFrame {
     private static final LightSource FIRST_LIGHT = new LightSource(RED, new Vec3(-0.6, 0.8, 0));
     private static final LightSource SECOND_LIGHT = new LightSource(GREEN, new Vec3(0, 0.9, -0.3));
     private static final LightSource THIRD_LIGHT = new LightSource(BLUE, new Vec3(0.6, 0.8, 0));
+    private static final LightSource FOURTH_LIGHT = new LightSource(WHITE, new Vec3(0, 0.9, 0.5));
     private static final double K = 50;
+    private static final int REFLECTIONS = 1;
 
     private List<Sphere> spheres;
     private List<LightSource> lightSources;
@@ -60,14 +61,10 @@ public class Frame extends JFrame {
         spheres.add(CYAN_SPHERE);
 
         lightSources = new ArrayList<>();
-        lightSources.add(THIRD_LIGHT);
-        lightSources.add(SECOND_LIGHT);
-        lightSources.add(FIRST_LIGHT);
-
-
-        // --- this is for debugging purposes only
-        Map<Sphere, Integer> occurrences = new HashMap<>();
-        // ---
+//        lightSources.add(THIRD_LIGHT);
+//        lightSources.add(SECOND_LIGHT);
+//        lightSources.add(FIRST_LIGHT);
+        lightSources.add(FOURTH_LIGHT);
 
         int[] data = new int[WIDTH * HEIGHT];
         for (int y = 0; y < HEIGHT; y++) {
@@ -77,16 +74,7 @@ public class Frame extends JFrame {
                 SphereHitpoint closestHitpoint = findClosestHitpoint(ray);
                 Vec3 color = BLACK;
                 if (closestHitpoint != null) {
-                    color = determineColor(spheres, closestHitpoint);
-
-                    // --- this is for debugging purposes only
-                    Integer integer = occurrences.get(closestHitpoint.getSphere());
-                    if (integer == null) {
-                        occurrences.put(closestHitpoint.getSphere(), 1);
-                    } else {
-                        occurrences.put(closestHitpoint.getSphere(), integer + 1);
-                    }
-                    // ---
+                    color = determineColor(spheres, closestHitpoint, REFLECTIONS);
                 }
                 int red = getSRGB(color.x);
                 int green = getSRGB(color.y);
@@ -94,13 +82,6 @@ public class Frame extends JFrame {
                 data[(y * WIDTH) + x] = (255 << 24) | (red << 16) | green << 8 | blue;
             }
         }
-
-        // --- this is for debugging purposes only
-        occurrences.forEach((sphere, integer) -> {
-            System.out.println("found " + integer + " pixels for sphere " + sphere.toString());
-        });
-        // ---
-
         MemoryImageSource producer = new MemoryImageSource(WIDTH, HEIGHT, data, 0, WIDTH);
         image = createImage(producer);
 
@@ -144,7 +125,7 @@ public class Frame extends JFrame {
         g.drawImage(image, 0, 0, this);
     }
 
-    private Vec3 determineColor(List<Sphere> spheres, SphereHitpoint sphereHitpoint) {
+    private Vec3 determineColor(List<Sphere> spheres, SphereHitpoint sphereHitpoint, int depth) {
         Sphere sphere = sphereHitpoint.getSphere();
         Vec3 color = BLACK;
         Vec3 lightDiffuse;
@@ -153,12 +134,32 @@ public class Frame extends JFrame {
         for (LightSource lightSource : lightSources) {
             lightDiffuse = diffuse(sphereHitpoint, sphere, lightSource);
             lightSpecular = specular(sphereHitpoint, sphere, lightSource);
-            lightShadow = new Vec3(0, 0, 0);
-            for (LightSource shadowSource : lightSources) {
-                lightShadow = lightShadow.add(shadow(sphereHitpoint, sphere, shadowSource));
+            lightShadow = shadowsOfLightSources(sphereHitpoint, sphere);
+            color = color.add(lightDiffuse).add(lightSpecular);
+            color = multiplyPointwise(color, lightShadow);
+        }
+        color = reflect(spheres, sphereHitpoint, depth, sphere, color);
+
+        return color;
+    }
+
+    private Vec3 reflect(List<Sphere> spheres, SphereHitpoint sphereHitpoint, int depth, Sphere sphere, Vec3 color) {
+        if (depth > 0 && sphere.getColor().equals(CYAN) || sphere.getColor().equals(YELLOW)) {
+            Vec3 h = sphereHitpoint.getH();
+            Vec3 sphereCenter = sphere.getCenter();
+            Vec3 up = h.subtract(sphereCenter).normalize();
+            h = h.add(up.scale(0.001f));
+            Vec3 he = sphereHitpoint.getRay().getDirection().negate();
+            float doubleTheta = 2 * up.dot(he);
+            Vec3 w = up.scale(doubleTheta).subtract(he);
+            Ray ray = new Ray(h, w);
+            SphereHitpoint newSphereHitpoint = findClosestHitpoint(ray);
+            Vec3 reflectedColor = BLACK;
+            if (newSphereHitpoint != null && newSphereHitpoint.getSphere().getSmallerPositiveLambda(ray) > 0) {
+                reflectedColor = multiplyPointwise(determineColor(spheres, newSphereHitpoint, --depth), MATERIAL);
             }
-            lightShadow = lightShadow.scale(0.66f);
-            color = multiplyPointwise(color.add(lightDiffuse).add(lightSpecular), lightShadow);
+//            color = multiplyPointwise(color, reflectedColor);
+            color = color.add(reflectedColor);
         }
         return color;
     }
@@ -193,6 +194,16 @@ public class Frame extends JFrame {
             return iS;
         }
         return BLACK;
+    }
+
+    private Vec3 shadowsOfLightSources(SphereHitpoint sphereHitpoint, Sphere sphere) {
+        Vec3 lightShadow;
+        lightShadow = new Vec3(0, 0, 0);
+        for (LightSource shadowSource : lightSources) {
+            lightShadow = lightShadow.add(shadow(sphereHitpoint, sphere, shadowSource));
+        }
+        lightShadow = lightShadow.scale(0.66f);
+        return lightShadow;
     }
 
     private Vec3 shadow(SphereHitpoint sphereHitpoint, Sphere sphere, LightSource lightSource) {
